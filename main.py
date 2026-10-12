@@ -2,6 +2,7 @@
 
 
 import math
+import random
 from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
@@ -37,6 +38,66 @@ def two_body_system(m1: float, m2: float, separation: float,
     p1 = Particle(m1, -r1, 0.0, 0.0,  v1)
     p2 = Particle(m2,  r2, 0.0, 0.0, -v2)
     return [p1, p2]
+
+def uniform_cluster(n: int,
+                    radius: float,
+                    total_mass: float,
+                    seed: int | None = None) -> list[Particle]:
+    """Однородное скопление из n частиц в круге радиуса radius."""
+    if seed is not None:
+        random.seed(seed)
+
+    particles = []
+    mass_per_particle = total_mass / n
+
+    for _ in range(n):
+        # rejection sampling: генерируем точку в квадрате,
+        # пока она не попадёт в круг
+        while True:
+            x = random.uniform(-radius, radius)
+            y = random.uniform(-radius, radius)
+            if x * x + y * y <= radius * radius:
+                break
+
+        particles.append(Particle(mass_per_particle, x, y))
+
+    return particles
+
+def rotating_disk(n: int,
+                  radius: float,
+                  total_mass: float,
+                  seed: int | None = None) -> list[Particle]:
+    """Вращающийся диск: частицы с тангенциальными скоростями."""
+    if seed is not None:
+        random.seed(seed)
+
+    particles = []
+    mass_per_particle = total_mass / n
+    G = 1.0
+
+    for _ in range(n):
+        # Случайная точка в круге
+        while True:
+            x = random.uniform(-radius, radius)
+            y = random.uniform(-radius, radius)
+            if x * x + y * y <= radius * radius:
+                break
+
+        r = math.sqrt(x * x + y * y)
+        if r == 0:
+            vx, vy = 0.0, 0.0
+        else:
+            # Круговая скорость внутри диска: v = sqrt(G * M(r) / r)
+            # M(r) — масса внутри радиуса r
+            mass_inside = total_mass * (r / radius) ** 2
+            v = 0.5 * math.sqrt(G * mass_inside / r)
+            # Тангенциальное направление: перпендикулярно (x, y)
+            vx = -v * y / r
+            vy =  v * x / r
+
+        particles.append(Particle(mass_per_particle, x, y, vx, vy))
+
+    return particles
 
 
 def compute_forces_direct(particles: list[Particle],
@@ -114,20 +175,30 @@ def simulate(particles: list[Particle],
 
 def plot_orbits(history: list[list[Particle]],
                 title: str = "Орбиты N тел",
-                save_path: str | None = None) -> None:
-    """Рисует траектории всех частиц."""
+                save_path: str | None = None,
+                show_legend: bool = True) -> None:
+    """Рисует траектории всех частиц.
+
+    Args:
+        history: история состояний.
+        title: заголовок.
+        save_path: путь для сохранения.
+        show_legend: показывать ли легенду (для N > 20 — обычно нет).
+    """
     n = len(history[0])
     plt.figure(figsize=(8, 8))
 
     for i in range(n):
         xs = [state[i].x for state in history]
         ys = [state[i].y for state in history]
-        plt.plot(xs, ys, lw=1.5, label=f"Частица {i}")
+        label = f"Частица {i}" if show_legend else None
+        plt.plot(xs, ys, lw=1.0, label=label, alpha=0.7)
 
     plt.gca().set_aspect("equal")
     plt.grid(True, alpha=0.3)
     plt.title(title)
-    plt.legend()
+    if show_legend and n <= 20:
+        plt.legend(fontsize=8, loc="upper right")
     plt.xlabel("x")
     plt.ylabel("y")
 
@@ -140,15 +211,24 @@ def plot_orbits(history: list[list[Particle]],
 
 
 if __name__ == "__main__":
+    # Тест 1: два тела
+    print("=== Тест 1: два тела ===")
     ps = two_body_system(1.0, 1.0, 1.0)
     history = simulate(ps, dt=0.01, steps=2000, record_every=10)
-
-    print(f"Всего снимков: {len(history)}")
-    for i, p in enumerate(history[-1]):
-        print(f"Частица {i}: x={p.x:.3f}, y={p.y:.3f}, vx={p.vx:.3f}, vy={p.vy:.3f}")
-
     plot_orbits(
         history,
         title="Орбиты двух тел",
         save_path="results/two_body.png",
+        show_legend=True,   
+    )
+
+    # Тест 2: вращающийся диск
+    print("\n=== Тест 2: вращающийся диск N=100 ===")
+    disk = rotating_disk(n=100, radius=1.0, total_mass=10.0, seed=42)
+    history_disk = simulate(disk, dt=0.0001, steps=20000, record_every=200)
+    plot_orbits(
+        history_disk,
+        title="Вращающийся диск N=100",
+        save_path="results/disk.png",
+        show_legend=False,   
     )

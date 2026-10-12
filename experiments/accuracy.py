@@ -12,14 +12,15 @@ from main import Particle, compute_forces_direct, uniform_cluster
 from barnes_hut import compute_forces_barnes_hut
 
 
-def compute_errors(particles_ref: list[Particle],
-                   particles_bh: list[Particle]) -> tuple[float, float]:
+def compute_errors(
+    particles_ref: list[Particle], particles_bh: list[Particle]
+) -> tuple[float, float]:
     """Считает среднюю и максимальную абсолютные ошибки по силам."""
     errors = []
     for pr, pb in zip(particles_ref, particles_bh):
         ex = abs(pr.ax - pb.ax)
         ey = abs(pr.ay - pb.ay)
-        err = (ex ** 2 + ey ** 2) ** 0.5
+        err = (ex**2 + ey**2) ** 0.5
         errors.append(err)
 
     mean_err = sum(errors) / len(errors)
@@ -27,9 +28,9 @@ def compute_errors(particles_ref: list[Particle],
     return mean_err, max_err
 
 
-def run_accuracy_experiment(n: int = 1000,
-                             thetas: list[float] = None,
-                             seed: int = 42) -> tuple[list[float], list[float], list[float], float]:
+def run_accuracy_experiment(
+    n: int = 1000, thetas: list[float] = None, seed: int = 42
+) -> tuple[list[float], list[float], list[float], float]:
     """Замеряет ошибку для разных θ.
 
     Returns:
@@ -59,15 +60,19 @@ def run_accuracy_experiment(n: int = 1000,
         max_errors.append(max_err)
 
         rel_err = mean_err / mean_magnitude * 100
-        print(f"θ = {theta:.1f}: mean_err = {mean_err:.6f}, max_err = {max_err:.6f}, rel = {rel_err:.4f}%")
+        print(
+            f"θ = {theta:.1f}: mean_err = {mean_err:.6f}, max_err = {max_err:.6f}, rel = {rel_err:.4f}%"
+        )
 
     return thetas, mean_errors, max_errors, mean_magnitude
 
 
-def plot_accuracy(thetas: list[float],
-                  mean_errors: list[float],
-                  max_errors: list[float],
-                  save_path: str = "results/accuracy.png") -> None:
+def plot_accuracy(
+    thetas: list[float],
+    mean_errors: list[float],
+    max_errors: list[float],
+    save_path: str = "results/accuracy.png",
+) -> None:
     """Рисует график ошибка vs θ."""
     plt.figure(figsize=(8, 6))
     plt.loglog(thetas, mean_errors, "o-", label="Средняя ошибка", lw=2)
@@ -87,8 +92,13 @@ def plot_accuracy(thetas: list[float],
     plt.close()
 
 
-def save_csv(thetas, mean_errors, max_errors, mean_magnitude,
-             save_path: str = "results/accuracy.csv") -> None:
+def save_csv(
+    thetas,
+    mean_errors,
+    max_errors,
+    mean_magnitude,
+    save_path: str = "results/accuracy.csv",
+) -> None:
     """Сохраняет данные в CSV."""
     with open(save_path, "w", newline="") as f:
         writer = csv.writer(f)

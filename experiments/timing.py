@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from main import Particle, compute_forces_direct, uniform_cluster
@@ -20,17 +21,16 @@ def time_direct(particles: list[Particle], G: float = 1.0) -> float:
     return time.perf_counter() - start
 
 
-def time_barnes_hut(particles: list[Particle],
-                    theta: float = 0.5) -> float:
+def time_barnes_hut(particles: list[Particle], theta: float = 0.5) -> float:
     """Замеряет время работы Барнса-Хата."""
     start = time.perf_counter()
     compute_forces_barnes_hut(particles, theta=theta)
     return time.perf_counter() - start
 
 
-def run_timing_experiment(n_values: list[int],
-                          repeat: int = 3,
-                          seed: int = 42) -> tuple[list[int], list[float], list[float]]:
+def run_timing_experiment(
+    n_values: list[int], repeat: int = 3, seed: int = 42
+) -> tuple[list[int], list[float], list[float]]:
     """Замеряет время для разных N.
 
     Args:
@@ -61,10 +61,12 @@ def run_timing_experiment(n_values: list[int],
     return n_values, direct_times, bh_times
 
 
-def plot_timing(n_values: list[int],
-                direct_times: list[float],
-                bh_times: list[float],
-                save_path: str = "results/timing.png") -> None:
+def plot_timing(
+    n_values: list[int],
+    direct_times: list[float],
+    bh_times: list[float],
+    save_path: str = "results/timing.png",
+) -> None:
     """Рисует график время vs N (log-log)."""
     plt.figure(figsize=(8, 6))
     plt.loglog(n_values, direct_times, "o-", label="Прямой метод O(N²)", lw=2)
@@ -84,10 +86,12 @@ def plot_timing(n_values: list[int],
     plt.close()
 
 
-def save_csv(n_values: list[int],
-             direct_times: list[float],
-             bh_times: list[float],
-             save_path: str = "results/timing.csv") -> None:
+def save_csv(
+    n_values: list[int],
+    direct_times: list[float],
+    bh_times: list[float],
+    save_path: str = "results/timing.csv",
+) -> None:
     """Сохраняет данные в CSV."""
     with open(save_path, "w", newline="") as f:
         writer = csv.writer(f)

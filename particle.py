@@ -6,6 +6,7 @@ from dataclasses import dataclass
 @dataclass
 class Particle:
     """Частица с массой, положением и скоростью в 2D."""
+
     mass: float
     x: float
     y: float

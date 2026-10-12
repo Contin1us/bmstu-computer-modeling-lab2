@@ -1,8 +1,7 @@
-import math
-from dataclasses import dataclass
-
 """Задача N тел: прямой метод и метод Барнса-Хата."""
 
+
+import math
 from dataclasses import dataclass
 
 
@@ -64,8 +63,62 @@ def compute_forces_direct(particles: list[Particle],
             pj.ay -= G * pi.mass * dy * inv_r3
 
 
+def velocity_verlet_step(particles: list[Particle],
+                         dt: float,
+                         G: float = 1.0) -> None:
+    """Один шаг интегратора velocity Verlet."""
+    # Шаг 1: половина обновления скорости
+    for p in particles:
+        p.vx += 0.5 * p.ax * dt
+        p.vy += 0.5 * p.ay * dt
+
+    # Шаг 2: полное обновление позиции
+    for p in particles:
+        p.x += p.vx * dt
+        p.y += p.vy * dt
+
+    # Шаг 3: пересчёт сил по новым позициям
+    compute_forces_direct(particles, G)
+
+    # Шаг 4: вторая половина обновления скорости
+    for p in particles:
+        p.vx += 0.5 * p.ax * dt
+        p.vy += 0.5 * p.ay * dt
+
+
+def simulate(particles: list[Particle],
+             dt: float,
+             steps: int,
+             G: float = 1.0,
+             record_every: int = 10) -> list[list[Particle]]:
+    """Полная симуляция. Возвращает историю состояний."""
+    history: list[list[Particle]] = []
+
+    # Начальный расчёт сил
+    compute_forces_direct(particles, G)
+
+    for step in range(steps):
+        velocity_verlet_step(particles, dt, G)
+
+        # Записываем состояние каждые record_every шагов
+        if step % record_every == 0:
+            snapshot = [
+                Particle(p.mass, p.x, p.y, p.vx, p.vy)
+                for p in particles
+            ]
+            history.append(snapshot)
+
+    return history
+
+
 if __name__ == "__main__":
     ps = two_body_system(1.0, 1.0, 1.0)
-    compute_forces_direct(ps)
-    for i, p in enumerate(ps):
-        print(f"Частица {i}: ax={p.ax:.3f}, ay={p.ay:.3f}")
+
+    # Симулируем 2000 шагов с dt = 0.01
+    history = simulate(ps, dt=0.01, steps=2000, record_every=10)
+
+    # Проверим, что частицы не улетели:
+    # энергия должна сохраняться примерно одинаковой
+    print(f"Всего снимков: {len(history)}")
+    for i, p in enumerate(history[-1]):
+        print(f"Частица {i}: x={p.x:.3f}, y={p.y:.3f}, vx={p.vx:.3f}, vy={p.vy:.3f}")

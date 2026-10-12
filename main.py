@@ -1,29 +1,16 @@
 """Задача N тел: прямой метод и метод Барнса-Хата."""
 
 
+"""Задача N тел: прямой метод и метод Барнса-Хата."""
+
 import math
 import random
-from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 
+from particle import Particle
+from barnes_hut import compute_forces_barnes_hut
 
-@dataclass
-class Particle:
-    """Частица с массой, положением и скоростью в 2D."""
-    mass: float
-    x: float
-    y: float
-    vx: float = 0.0
-    vy: float = 0.0
-    ax: float = 0.0
-    ay: float = 0.0
-
-    def distance_to(self, other: "Particle") -> float:
-        """Расстояние до другой частицы."""
-        dx = self.x - other.x
-        dy = self.y - other.y
-        return (dx * dx + dy * dy) ** 0.5
 
 def two_body_system(m1: float, m2: float, separation: float,
                     G: float = 1.0) -> list[Particle]:
@@ -128,22 +115,34 @@ def compute_forces_direct(particles: list[Particle],
 
 def velocity_verlet_step(particles: list[Particle],
                          dt: float,
-                         G: float = 1.0) -> None:
-    """Один шаг интегратора velocity Verlet."""
+                         G: float = 1.0,
+                         method: str = "direct",
+                         theta: float = 0.5) -> None:
+    """Один шаг интегратора velocity Verlet.
+
+    Args:
+        method: "direct" — прямой O(N²), "barnes_hut" — дерево O(N log N).
+        theta: параметр точности для Барнса-Хата.
+    """
     # Шаг 1: половина обновления скорости
     for p in particles:
         p.vx += 0.5 * p.ax * dt
         p.vy += 0.5 * p.ay * dt
 
-    # Шаг 2: полное обновление позиции
+    # Шаг 2: обновление позиции
     for p in particles:
         p.x += p.vx * dt
         p.y += p.vy * dt
 
-    # Шаг 3: пересчёт сил по новым позициям
-    compute_forces_direct(particles, G)
+    # Шаг 3: пересчёт сил (выбор метода)
+    if method == "direct":
+        compute_forces_direct(particles, G)
+    elif method == "barnes_hut":
+        compute_forces_barnes_hut(particles, theta=theta)
+    else:
+        raise ValueError(f"Неизвестный метод: {method}")
 
-    # Шаг 4: вторая половина обновления скорости
+    # Шаг 4: вторая половина скорости
     for p in particles:
         p.vx += 0.5 * p.ax * dt
         p.vy += 0.5 * p.ay * dt
@@ -153,17 +152,28 @@ def simulate(particles: list[Particle],
              dt: float,
              steps: int,
              G: float = 1.0,
-             record_every: int = 10) -> list[list[Particle]]:
-    """Полная симуляция. Возвращает историю состояний."""
+             record_every: int = 10,
+             method: str = "direct",
+             theta: float = 0.5) -> list[list[Particle]]:
+    """Полная симуляция. Возвращает историю состояний.
+
+    Args:
+        method: "direct" или "barnes_hut".
+        theta: параметр точности для Барнса-Хата.
+    """
     history: list[list[Particle]] = []
 
     # Начальный расчёт сил
-    compute_forces_direct(particles, G)
+    if method == "direct":
+        compute_forces_direct(particles, G)
+    elif method == "barnes_hut":
+        compute_forces_barnes_hut(particles, theta=theta)
+    else:
+        raise ValueError(f"Неизвестный метод: {method}")
 
     for step in range(steps):
-        velocity_verlet_step(particles, dt, G)
+        velocity_verlet_step(particles, dt, G, method, theta)
 
-        # Записываем состояние каждые record_every шагов
         if step % record_every == 0:
             snapshot = [
                 Particle(p.mass, p.x, p.y, p.vx, p.vy)
@@ -211,24 +221,35 @@ def plot_orbits(history: list[list[Particle]],
 
 
 if __name__ == "__main__":
-    # Тест 1: два тела
+    # Тест 1: два тела (прямой метод)
     print("=== Тест 1: два тела ===")
     ps = two_body_system(1.0, 1.0, 1.0)
-    history = simulate(ps, dt=0.01, steps=2000, record_every=10)
+    history = simulate(ps, dt=0.01, steps=2000, record_every=10, method="direct")
     plot_orbits(
         history,
         title="Орбиты двух тел",
         save_path="results/two_body.png",
-        show_legend=True,   
     )
 
-    # Тест 2: вращающийся диск
+    # Тест 2: вращающийся диск (прямой метод)
     print("\n=== Тест 2: вращающийся диск N=100 ===")
     disk = rotating_disk(n=100, radius=1.0, total_mass=10.0, seed=42)
-    history_disk = simulate(disk, dt=0.0001, steps=20000, record_every=200)
+    history_disk = simulate(disk, dt=0.0001, steps=20000, record_every=200, method="direct")
     plot_orbits(
         history_disk,
         title="Вращающийся диск N=100",
         save_path="results/disk.png",
-        show_legend=False,   
+        show_legend=False,
+    )
+
+    # Тест 3: тот же диск, но через Барнс-Хат
+    print("\n=== Тест 3: диск N=100 (Барнс-Хат, θ=0.5) ===")
+    disk_bh = rotating_disk(n=100, radius=1.0, total_mass=10.0, seed=42)
+    history_bh = simulate(disk_bh, dt=0.0001, steps=20000, record_every=200,
+                          method="barnes_hut", theta=0.5)
+    plot_orbits(
+        history_bh,
+        title="Диск N=100 (Барнс-Хат)",
+        save_path="results/disk_bh.png",
+        show_legend=False,
     )

@@ -4,6 +4,8 @@
 import math
 from dataclasses import dataclass
 
+import matplotlib.pyplot as plt
+
 
 @dataclass
 class Particle:
@@ -110,15 +112,43 @@ def simulate(particles: list[Particle],
 
     return history
 
+def plot_orbits(history: list[list[Particle]],
+                title: str = "Орбиты N тел",
+                save_path: str | None = None) -> None:
+    """Рисует траектории всех частиц."""
+    n = len(history[0])
+    plt.figure(figsize=(8, 8))
+
+    for i in range(n):
+        xs = [state[i].x for state in history]
+        ys = [state[i].y for state in history]
+        plt.plot(xs, ys, lw=1.5, label=f"Частица {i}")
+
+    plt.gca().set_aspect("equal")
+    plt.grid(True, alpha=0.3)
+    plt.title(title)
+    plt.legend()
+    plt.xlabel("x")
+    plt.ylabel("y")
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"График сохранён в {save_path}")
+
+    plt.show()
+    plt.close()
+
 
 if __name__ == "__main__":
     ps = two_body_system(1.0, 1.0, 1.0)
-
-    # Симулируем 2000 шагов с dt = 0.01
     history = simulate(ps, dt=0.01, steps=2000, record_every=10)
 
-    # Проверим, что частицы не улетели:
-    # энергия должна сохраняться примерно одинаковой
     print(f"Всего снимков: {len(history)}")
     for i, p in enumerate(history[-1]):
         print(f"Частица {i}: x={p.x:.3f}, y={p.y:.3f}, vx={p.vx:.3f}, vy={p.vy:.3f}")
+
+    plot_orbits(
+        history,
+        title="Орбиты двух тел",
+        save_path="results/two_body.png",
+    )

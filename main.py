@@ -1,6 +1,5 @@
 """Задача N тел: прямой метод и метод Барнса-Хата."""
 
-
 """Задача N тел: прямой метод и метод Барнса-Хата."""
 
 import math
@@ -12,8 +11,9 @@ from particle import Particle
 from barnes_hut import compute_forces_barnes_hut
 
 
-def two_body_system(m1: float, m2: float, separation: float,
-                    G: float = 1.0) -> list[Particle]:
+def two_body_system(
+    m1: float, m2: float, separation: float, G: float = 1.0
+) -> list[Particle]:
     """Два тела на круговой орбите вокруг общего центра масс."""
     total = m1 + m2
     r1 = separation * m2 / total
@@ -22,14 +22,14 @@ def two_body_system(m1: float, m2: float, separation: float,
     v1 = math.sqrt(G * m2 * m2 / (total * separation))
     v2 = math.sqrt(G * m1 * m1 / (total * separation))
 
-    p1 = Particle(m1, -r1, 0.0, 0.0,  v1)
-    p2 = Particle(m2,  r2, 0.0, 0.0, -v2)
+    p1 = Particle(m1, -r1, 0.0, 0.0, v1)
+    p2 = Particle(m2, r2, 0.0, 0.0, -v2)
     return [p1, p2]
 
-def uniform_cluster(n: int,
-                    radius: float,
-                    total_mass: float,
-                    seed: int | None = None) -> list[Particle]:
+
+def uniform_cluster(
+    n: int, radius: float, total_mass: float, seed: int | None = None
+) -> list[Particle]:
     """Однородное скопление из n частиц в круге радиуса radius."""
     if seed is not None:
         random.seed(seed)
@@ -50,10 +50,10 @@ def uniform_cluster(n: int,
 
     return particles
 
-def rotating_disk(n: int,
-                  radius: float,
-                  total_mass: float,
-                  seed: int | None = None) -> list[Particle]:
+
+def rotating_disk(
+    n: int, radius: float, total_mass: float, seed: int | None = None
+) -> list[Particle]:
     """Вращающийся диск: частицы с тангенциальными скоростями."""
     if seed is not None:
         random.seed(seed)
@@ -80,16 +80,16 @@ def rotating_disk(n: int,
             v = 0.5 * math.sqrt(G * mass_inside / r)
             # Тангенциальное направление: перпендикулярно (x, y)
             vx = -v * y / r
-            vy =  v * x / r
+            vy = v * x / r
 
         particles.append(Particle(mass_per_particle, x, y, vx, vy))
 
     return particles
 
 
-def compute_forces_direct(particles: list[Particle],
-                          G: float = 1.0,
-                          softening: float = 0.01) -> None:
+def compute_forces_direct(
+    particles: list[Particle], G: float = 1.0, softening: float = 0.01
+) -> None:
     """Считает ускорения прямым методом O(N²)."""
     n = len(particles)
     for p in particles:
@@ -113,11 +113,13 @@ def compute_forces_direct(particles: list[Particle],
             pj.ay -= G * pi.mass * dy * inv_r3
 
 
-def velocity_verlet_step(particles: list[Particle],
-                         dt: float,
-                         G: float = 1.0,
-                         method: str = "direct",
-                         theta: float = 0.5) -> None:
+def velocity_verlet_step(
+    particles: list[Particle],
+    dt: float,
+    G: float = 1.0,
+    method: str = "direct",
+    theta: float = 0.5,
+) -> None:
     """Один шаг интегратора velocity Verlet.
 
     Args:
@@ -148,13 +150,15 @@ def velocity_verlet_step(particles: list[Particle],
         p.vy += 0.5 * p.ay * dt
 
 
-def simulate(particles: list[Particle],
-             dt: float,
-             steps: int,
-             G: float = 1.0,
-             record_every: int = 10,
-             method: str = "direct",
-             theta: float = 0.5) -> list[list[Particle]]:
+def simulate(
+    particles: list[Particle],
+    dt: float,
+    steps: int,
+    G: float = 1.0,
+    record_every: int = 10,
+    method: str = "direct",
+    theta: float = 0.5,
+) -> list[list[Particle]]:
     """Полная симуляция. Возвращает историю состояний.
 
     Args:
@@ -175,18 +179,18 @@ def simulate(particles: list[Particle],
         velocity_verlet_step(particles, dt, G, method, theta)
 
         if step % record_every == 0:
-            snapshot = [
-                Particle(p.mass, p.x, p.y, p.vx, p.vy)
-                for p in particles
-            ]
+            snapshot = [Particle(p.mass, p.x, p.y, p.vx, p.vy) for p in particles]
             history.append(snapshot)
 
     return history
 
-def plot_orbits(history: list[list[Particle]],
-                title: str = "Орбиты N тел",
-                save_path: str | None = None,
-                show_legend: bool = True) -> None:
+
+def plot_orbits(
+    history: list[list[Particle]],
+    title: str = "Орбиты N тел",
+    save_path: str | None = None,
+    show_legend: bool = True,
+) -> None:
     """Рисует траектории всех частиц.
 
     Args:
@@ -234,7 +238,9 @@ if __name__ == "__main__":
     # Тест 2: вращающийся диск (прямой метод)
     print("\n=== Тест 2: вращающийся диск N=100 ===")
     disk = rotating_disk(n=100, radius=1.0, total_mass=10.0, seed=42)
-    history_disk = simulate(disk, dt=0.0001, steps=20000, record_every=200, method="direct")
+    history_disk = simulate(
+        disk, dt=0.0001, steps=20000, record_every=200, method="direct"
+    )
     plot_orbits(
         history_disk,
         title="Вращающийся диск N=100",
@@ -245,8 +251,14 @@ if __name__ == "__main__":
     # Тест 3: тот же диск, но через Барнс-Хат
     print("\n=== Тест 3: диск N=100 (Барнс-Хат, θ=0.5) ===")
     disk_bh = rotating_disk(n=100, radius=1.0, total_mass=10.0, seed=42)
-    history_bh = simulate(disk_bh, dt=0.0001, steps=20000, record_every=200,
-                          method="barnes_hut", theta=0.5)
+    history_bh = simulate(
+        disk_bh,
+        dt=0.0001,
+        steps=20000,
+        record_every=200,
+        method="barnes_hut",
+        theta=0.5,
+    )
     plot_orbits(
         history_bh,
         title="Диск N=100 (Барнс-Хат)",

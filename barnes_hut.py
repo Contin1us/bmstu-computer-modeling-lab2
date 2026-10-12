@@ -10,6 +10,7 @@ from particle import Particle
 # Гравитационная постоянная
 G = 1.0
 
+
 @dataclass
 class QuadTree:
     """Узел квадродерева — квадратная ячейка в 2D.
@@ -22,6 +23,7 @@ class QuadTree:
         total_mass: суммарная масса всех частиц в поддереве.
         is_leaf: True, если узел — лист (без детей).
     """
+
     x_min: float
     x_max: float
     y_min: float
@@ -31,7 +33,6 @@ class QuadTree:
     center_mass: tuple[float, float] = (0.0, 0.0)
     total_mass: float = 0.0
     is_leaf: bool = True
-
 
     def _subdivide(self) -> None:
         """Делит узел на 4 подузла.
@@ -48,6 +49,7 @@ class QuadTree:
             QuadTree(x_mid, self.x_max, y_mid, self.y_max),  # правый-верхний
         ]
         self.is_leaf = False
+
     def _get_quadrant(self, particle: Particle) -> int:
         """Определяет, в какой из 4 подузлов попадает частица.
 
@@ -59,12 +61,11 @@ class QuadTree:
         if particle.x < x_mid:
             if particle.y < y_mid:
                 return 0  # левый-нижний
-            return 2      # левый-верхний
+            return 2  # левый-верхний
         else:
             if particle.y < y_mid:
                 return 1  # правый-нижний
-            return 3      # правый-верхний
-
+            return 3  # правый-верхний
 
     def insert(self, particle: Particle) -> None:
         """Добавляет частицу в дерево.
@@ -80,8 +81,8 @@ class QuadTree:
         # Случай 2: лист с 1 частицей — делим и распределяем ОБЕ
         if self.is_leaf and len(self.particles) == 1:
             old_particle = self.particles[0]
-            self.particles = []              # очищаем старый список
-            self._subdivide()                # создаём 4 подузла
+            self.particles = []  # очищаем старый список
+            self._subdivide()  # создаём 4 подузла
 
             # Распределяем обе частицы по подузлам
             self.children[self._get_quadrant(old_particle)].insert(old_particle)
@@ -122,7 +123,7 @@ class QuadTree:
         cx = 0.0
         cy = 0.0
         for child in self.children:
-            child.compute_mass_center()      # сначала дети
+            child.compute_mass_center()  # сначала дети
             total += child.total_mass
             cx += child.total_mass * child.center_mass[0]
             cy += child.total_mass * child.center_mass[1]
@@ -133,10 +134,9 @@ class QuadTree:
         else:
             self.center_mass = (0.0, 0.0)
 
-    def compute_force(self,
-                      target: Particle,
-                      theta: float = 0.5,
-                      softening: float = 0.01) -> tuple[float, float]:
+    def compute_force(
+        self, target: Particle, theta: float = 0.5, softening: float = 0.01
+    ) -> tuple[float, float]:
         """Считает ускорение, действующее на target со стороны всех частиц дерева.
 
         Args:
@@ -180,11 +180,13 @@ class QuadTree:
 
         return ax, ay
 
-def compute_forces_barnes_hut(particles: list[Particle],
-                              theta: float = 0.5,
-                              softening: float = 0.01,
-                              bounds: tuple[float, float, float, float] | None = None
-                              ) -> None:
+
+def compute_forces_barnes_hut(
+    particles: list[Particle],
+    theta: float = 0.5,
+    softening: float = 0.01,
+    bounds: tuple[float, float, float, float] | None = None,
+) -> None:
     """Считает ускорения для всех частиц через дерево Барнса-Хата.
 
     Args:
